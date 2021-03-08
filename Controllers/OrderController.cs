@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using SampleAPI.Filters;
 using SampleAPI.Models;
 using SampleAPI.Repositories;
 using SampleAPI.Requests;
@@ -7,13 +8,14 @@ using SampleAPI.Response;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace SampleAPI.Controllers
 {
     [Route("api/order")]
     [ApiController]
-    public class OrderController : Controller
+    //[ServiceFilter(typeof(CustomActionFilter))]
+    [CustomActionFilterAttribute]
+    public class OrderController : ControllerBase
     {
         private readonly IOrderRepository _orderRepository;
         public OrderController(IOrderRepository orderRepository)
@@ -22,6 +24,7 @@ namespace SampleAPI.Controllers
         }
 
         [HttpGet]
+        [OrderExist]
         public IActionResult Get()
         {
             return Ok(Map(_orderRepository.Get()));
@@ -46,8 +49,28 @@ namespace SampleAPI.Controllers
             return CreatedAtAction(nameof(GetById), new { id = order.Id }, null);
         }
 
-        //[HttpPut("{id:guid}")]
+        [HttpPut("{id:guid}")]
+        [OrderExist]
+        public IActionResult Put(Guid id, OrderRequest request)
+        {
+            if(request.ItemsIds == null)
+            {
+                return BadRequest();
+            }
+
+            var order = _orderRepository.Get(id);
+            if(order == null)
+            {
+                return NotFound(new { Message = $"Item with id {id} not exist." });
+            }
+
+            order = Map(request, order);
+            _orderRepository.Update(id, order);
+            return Ok();
+        }
+
         [HttpPatch("{id:guid}")]
+        [OrderExist]
         public IActionResult Patch(Guid id, JsonPatchDocument<Order> requestOp)
         {
             var order = _orderRepository.Get(id);
@@ -60,6 +83,7 @@ namespace SampleAPI.Controllers
         }
 
         [HttpDelete]
+        [OrderExist]
         public IActionResult Delete(Guid id)
         {
             var order = _orderRepository.Get(id);
@@ -69,6 +93,11 @@ namespace SampleAPI.Controllers
             }
             _orderRepository.Delete(id);
             return Ok();
+        }
+
+        private Order Map(OrderRequest request, Order order)
+        {
+            throw new NotImplementedException();
         }
 
         private IEnumerable<OrderResponse> Map(IEnumerable<Order> orders)

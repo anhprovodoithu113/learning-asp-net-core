@@ -7,12 +7,15 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using SampleAPI.CustomRouting;
 using SampleAPI.Demo;
+using SampleAPI.Filters;
 using SampleAPI.Repositories;
 using SampleAPI.Services;
 
@@ -34,6 +37,9 @@ namespace SampleAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            // Config global filter
+            //services.AddControllers(config => config.Filters.Add(new CustomFilter()));
+
             services.AddControllers();
             // How to register the services by condition
             if (Environment.IsDevelopment())
@@ -43,12 +49,18 @@ namespace SampleAPI
             else
             {
                 services.AddTransient<IPaymentService, ExternalPaymentService>();
-
             }
 
+            // Register the custom service by route.
+            services.Configure<RouteOptions>(ops => ops.ConstraintMap.Add("currency", typeof(CurrencyConstraint)));
+
+            //services.AddSingleton<IOrderRepository, MemoryOrderRepository>()
+            //    .AddControllers()
+            //    .AddNewtonsoftJson();
+
             services.AddSingleton<IOrderRepository, MemoryOrderRepository>()
-                .AddControllers()
-                .AddNewtonsoftJson();
+                .AddSingleton<CustomActionFilter>();
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "SampleAPI", Version = "v1" });
