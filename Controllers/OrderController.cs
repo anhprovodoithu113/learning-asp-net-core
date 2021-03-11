@@ -24,13 +24,13 @@ namespace SampleAPI.Controllers
         }
 
         [HttpGet]
-        [OrderExist]
         public IActionResult Get()
         {
             return Ok(Map(_orderRepository.Get()));
         }
 
         [HttpGet("{id:guid}")]
+        [OrderExist]
         public IActionResult GetById(Guid id)
         {
             return Ok(_orderRepository.Get(id));

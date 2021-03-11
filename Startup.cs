@@ -40,6 +40,9 @@ namespace SampleAPI
             // Config global filter
             //services.AddControllers(config => config.Filters.Add(new CustomFilter()));
 
+            //config Logging
+            services.AddSingleton<ILogger>(provider => provider.GetRequiredService<ILogger<CustomActionFilter>>());
+
             services.AddControllers();
             // How to register the services by condition
             if (Environment.IsDevelopment())
@@ -58,8 +61,7 @@ namespace SampleAPI
             //    .AddControllers()
             //    .AddNewtonsoftJson();
 
-            services.AddSingleton<IOrderRepository, MemoryOrderRepository>()
-                .AddSingleton<CustomActionFilter>();
+            services.AddSingleton<IOrderRepository, MemoryOrderRepository>().AddControllers();
 
             services.AddSwaggerGen(c =>
             {
@@ -78,6 +80,10 @@ namespace SampleAPI
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "SampleAPI v1"));
+            }
+            else
+            {
+                app.UseHsts();
             }
 
             app.UseHttpsRedirection();
